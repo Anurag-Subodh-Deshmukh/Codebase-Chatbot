@@ -1,40 +1,29 @@
-import { Sequelize, DataTypes } from "sequelize";
+import { DataTypes } from "sequelize";
+import sequelize from "../db/sequelize.js";
 
-export default async function repoInputModel() {
-  const sequelize = new Sequelize(
-    process.env.POSTGRES_DB_NAME,
-    process.env.POSTGRES_USERNAME,
-    process.env.POSTGRES_PASSWORD,
-    {
-      host: "localhost",
-      dialect: "postgres",
-    }
-  );
-
-  const RepoInput = sequelize.define(
-    "repoInput",
-    {
-      id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-      email: {
-        type: DataTypes.STRING,
-        unique: true,
-        allowNull: false,
-      },
-      repos: {
-        type: DataTypes.JSONB,
-        defaultValue: [],
-      },
+// Define the model using the shared sequelize instance
+const RepoInput = sequelize.define(
+  "repoInput",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
     },
-    {
-      tableName: "REPO_INPUT",
-      timestamps: false,
-    }
-  );
+    email: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: false,
+    },
+    repos: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
+  },
+  {
+    tableName: "REPO_INPUT",
+    timestamps: false,
+  }
+);
 
-  await sequelize.sync();
-  return RepoInput;
-}
+export default RepoInput;

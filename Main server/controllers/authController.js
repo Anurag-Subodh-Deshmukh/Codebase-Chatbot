@@ -1,4 +1,4 @@
-import authModel from "../models/authModel.js";
+import Auth from "../models/authModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -9,8 +9,6 @@ export async function register(req, res) {
     if (!name || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
-
-    const Auth = await authModel();
 
     // Check if user already exists
     const existingUser = await Auth.findOne({ where: { email } });
@@ -37,8 +35,11 @@ export async function register(req, res) {
       },
     });
   } catch (err) {
-    console.log("Error: ", err.message);
-    res.status(500).json({ error: "Failed to register user" });
+    console.error("Register error:", err);
+    res.status(500).json({ 
+      error: "Failed to register user",
+      details: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
   }
 }
 
@@ -49,8 +50,6 @@ export async function login(req, res) {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
-
-    const Auth = await authModel();
 
     // Find user by email
     const user = await Auth.findOne({ where: { email } });
@@ -81,8 +80,11 @@ export async function login(req, res) {
       },
     });
   } catch (err) {
-    console.log("Error: ", err.message);
-    res.status(500).json({ error: "Failed to login" });
+    console.error("Login error:", err);
+    res.status(500).json({ 
+      error: "Failed to login",
+      details: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
   }
 }
 

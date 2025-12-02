@@ -1,5 +1,5 @@
-import promptModel from "../models/promptModel.js";
-import authModel from "../models/authModel.js";
+import Prompt from "../models/promptModel.js";
+import Auth from "../models/authModel.js";
 
 export async function savePrompt(req, res) {
   try {
@@ -8,9 +8,6 @@ export async function savePrompt(req, res) {
     if (!email || !prompt) {
       return res.status(400).json({ error: "Email and prompt are required" });
     }
-
-    const Auth = await authModel();
-    const Prompt = await promptModel();
 
     // Find user by email
     const user = await Auth.findOne({ where: { email } });
@@ -29,8 +26,11 @@ export async function savePrompt(req, res) {
       data: newPrompt,
     });
   } catch (err) {
-    console.log("Error: ", err.message);
-    res.status(500).json({ error: "Failed to save prompt" });
+    console.error("Save prompt error:", err);
+    res.status(500).json({ 
+      error: "Failed to save prompt",
+      details: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
   }
 }
 
