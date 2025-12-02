@@ -1,49 +1,97 @@
-import {GitLoader} from '@langchain/community';
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { Language } from 'langchain/text_splitter';
-import { PineconeStore } from '@langchain/pinecone';
-import fs from 'fs/promises';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { TextLoader } from "@langchain/classic/document_loaders/fs/text"
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import os from "os";
+import { glob } from "glob";
+import client from '../config/vectordb.config.js';
 
-import { pineconeIndex } from '../config/vectordb.config';
-import { embeddingModel } from '../config/embedding.config';
+const EXTENSION_MAP = {
+    ".js": "js",
+    ".jsx": "js",
+    ".ts": "js",
+    ".tsx": "js",
+    ".py": "python",
+    ".java": "java",
+    ".go": "go",
+    ".cpp": "cpp",
+    ".php": "php",
+};
 
-export const indexProcessor = async(job)=>{
+export const indexProcessor = async (job) => {
     const { repo_url, user_id } = job.data;
-    const tempDir = `/tmp/${job.id}`;
+    console.log("Hi");
 
+    const prefix = path.join(os.tmpdir(), 'repo-clone-');
+    const localPath = fs.mkdtempSync(prefix);
     try {
-        const cloner = new GitLoader({
-            repoPath: tempDir,
-            url: repo_url,
+
+        execSync(`git clone --depth 1 ${repo_url} .`, { cwd: localPath, stdio: 'ignore' });
+
+        const files = await glob("**/*", {
+            cwd: localPath,
+            nodir: true,
+            absolute: true,
+            ignore: [
+                "**/node_modules/**", "**/.git/**", "**/*.md", "**/*.json", "**/*.lock"
+            ]
         });
 
-        const documents = await cloner.load();
+        const allChunks = [];
 
-        const splitter = RecursiveCharacterTextSplitter.fromLanguage(
-            Language.JS, 
-                {chunkSize: 1000, chunkOverlap: 100 }
-        );
-        const chunks = await splitter.splitDocuments(documents);
+        for (const filePath of files) {
+            const ext = path.extname(filePath).toLowerCase();
+            const loader = new TextLoader(filePath);
+            const docs = await loader.load();
 
-        const chunksMetaData = chunks.map((chunk)=>{
-            chunk.metadata.user_id = user_id;
-            chunk.metadata.repo_url = repo_url;
+            const language = EXTENSION_MAP[ext];
+            let splitter;
 
-            return chunk;
-        })
-
-        await PineconeStore.fromDocuments(
-            chunksMetaData,
-            embeddingModel,
-            {
-                pineconeIndex,
-                maxConcurrency : 5,
+            if (language) {
+                splitter = RecursiveCharacterTextSplitter.fromLanguage(language, {
+                    chunkSize: 800, chunkOverlap: 100,
+                });
+            } else {
+                splitter = new RecursiveCharacterTextSplitter({
+                    chunkSize: 1000, chunkOverlap: 100,
+                });
             }
-        )
+
+            const newChunks = await splitter.splitDocuments(docs);
+
+            newChunks.forEach(chunk => {
+                chunk.metadata.source = filePath;
+                chunk.metadata.repo = repo_url;
+                chunk.metadata.userid = user_id;
+                chunk.pageContent = `File: ${path.basename(filePath)}\n\n${chunk.pageContent}`;
+            });
+
+            allChunks.push(...newChunks);
+        }
+
+        console.log(allChunks);
+        const myCollection = client.collections.use('RepoCodeChunk')
+
+        let dataObjects = new Array();
+
+        for (let srcObject of allChunks) {
+            dataObjects.push({
+                text: srcObject.pageContent,
+                repourl: srcObject.metadata.repo,
+                userid: srcObject.metadata.userid
+            });
+        }
+
+        const response = await myCollection.data.insertMany(dataObjects);
+        console.log(response);
     } catch (error) {
+        console.error("Error processing repo:", error);
         throw error;
-    }
-    finally{
-        await fs.rm(tempDir, {recursive : true, force : true});
+    } finally {
+        if (fs.existsSync(localPath)) {
+            fs.rmSync(localPath, { recursive: true, force: true });
+            console.log(`Cleaned up ${localPath}`);
+        }
     }
 }

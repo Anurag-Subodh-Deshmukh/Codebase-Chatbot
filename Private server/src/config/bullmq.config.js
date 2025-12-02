@@ -1,8 +1,8 @@
-import 'dotenv/config';
+const connection = {
+  host: 'game-puma-43289.upstash.io',
+  port: 6379,
+  password: process.env.UPSTASH_PASSWORD,
+  tls: {}
+};
 
-export const connection = {
-    connection: {
-    host: 'myredis.taskforce.run',
-    port: 32856,
-  }   
-}
+export default connection;
