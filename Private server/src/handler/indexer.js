@@ -20,8 +20,9 @@ const EXTENSION_MAP = {
 };
 
 export const indexProcessor = async (job) => {
-    const { repo_url, user_id } = job.data;
+    const { repo_url, email } = job.data;
     console.log("Hi");
+    //console.log(job.data)
 
     const prefix = path.join(os.tmpdir(), 'repo-clone-');
     const localPath = fs.mkdtempSync(prefix);
@@ -63,7 +64,7 @@ export const indexProcessor = async (job) => {
             newChunks.forEach(chunk => {
                 chunk.metadata.source = filePath;
                 chunk.metadata.repo = repo_url;
-                chunk.metadata.userid = user_id;
+                chunk.metadata.userid = email;
                 chunk.pageContent = `File: ${path.basename(filePath)}\n\n${chunk.pageContent}`;
             });
 
