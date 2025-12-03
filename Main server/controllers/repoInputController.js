@@ -1,8 +1,23 @@
 import RepoInput from "../models/repoInputModel.js";
+import connection from "../config/bullmq.config.js";
+import { Queue } from 'bullmq';
+
+async function addToQueue(email, repo_url) {
+  try{
+    const queue = new Queue('repo-index-queue', { connection });
+    const job = await queue.add('repo-index', { email, repo_url });
+    console.log("Data added to queue:", job.data)
+  } catch (err) {
+    console.error("Add to queue error:", err);
+    throw err;
+  }
+}
 
 export async function saveRepoInput(req, res) {
   try {
     const { email, repos } = req.body;
+
+    console.log("Data to be added to queue:", email, repos[0]);
 
     if (!email || !repos) {
       return res.status(400).json({ error: "Email and repos are required" });
@@ -13,6 +28,8 @@ export async function saveRepoInput(req, res) {
       { email, repos },
       { returning: true }
     );
+
+    await addToQueue(email, repos[0]);
 
     res.status(201).json(repoData);
   } catch (err) {
