@@ -5,7 +5,7 @@ import sequelize from "../db/sequelize.js";
 const Auth = sequelize.define(
   "auth",
   {
-    id: {
+    user_id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
@@ -22,19 +22,10 @@ const Auth = sequelize.define(
     password: {
       type: DataTypes.STRING,
       allowNull: false,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
+    }
   },
   {
     tableName: "AUTH",
-    timestamps: false,
   }
 );
 

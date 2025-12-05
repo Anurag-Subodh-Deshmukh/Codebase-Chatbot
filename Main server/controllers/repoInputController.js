@@ -1,18 +1,35 @@
 import RepoInput from "../models/repoInputModel.js";
+import connection from "../config/bullmq.config.js";
+import { Queue } from 'bullmq';
+
+async function addToQueue(email, repo_url) {
+  try{
+    const queue = new Queue('repo-index-queue', { connection });
+    const job = await queue.add('repo-index', { email, repo_url });
+    //console.log("Data added to queue:", job.data)
+  } catch (err) {
+    console.error("Add to queue error:", err);
+    throw err;
+  }
+}
 
 export async function saveRepoInput(req, res) {
   try {
-    const { email, repos } = req.body;
+    const { email, repo_url } = req.body;
 
-    if (!email || !repos) {
-      return res.status(400).json({ error: "Email and repos are required" });
+    //console.log("Data to be added to queue:", email, repos[0]);
+
+    if (!email || !repo_url) {
+      return res.status(400).json({ error: "Email and repo_url are required" });
     }
 
     // Use upsert to create or update
     const [repoData, created] = await RepoInput.upsert(
-      { email, repos },
+      { email, repo_url },
       { returning: true }
     );
+
+    await addToQueue(email, repo_url);
 
     res.status(201).json(repoData);
   } catch (err) {
@@ -26,13 +43,13 @@ export async function saveRepoInput(req, res) {
 
 export async function getRepoInput(req, res) {
   try {
-    const email = req.params.email;
+    const repo_id = req.params.repo_id;
 
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    if (!repo_id) {
+      return res.status(400).json({ error: "Repo id is required" });
     }
 
-    const data = await RepoInput.findOne({ where: { email } });
+    const data = await RepoInput.findOne({ where: { repo_id } });
     
     if (!data) {
       return res.status(404).json({ error: "Repository data not found" });

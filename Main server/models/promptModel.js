@@ -1,35 +1,36 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../db/sequelize.js";
+import { response } from "express";
 
 // Define the model using the shared sequelize instance
 const Prompt = sequelize.define(
   "prompt",
   {
-    id: {
+    prompt_id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    user_id: {
+    chat_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "AUTH",
-        key: "id",
+        model: "CHAT",
+        key: "chat_id",
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     prompt: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+    response: {
+      type: DataTypes.TEXT,
     },
   },
   {
     tableName: "PROMPT",
-    timestamps: false,
   }
 );
 

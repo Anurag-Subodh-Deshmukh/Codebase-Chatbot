@@ -1,18 +1,22 @@
 import { GoogleGenAI } from "@google/genai";
-import { buildAugmentedPrompt } from "../util/augmenter.js";
+import { buildAugmentedPrompt } from "./augmenter.js";
 import client from "../client/weaviate.client.js";
+import { Filters } from 'weaviate-client';
 
-export async function generation(req, res) {
+export async function generation(query, email, repo_url) {
     try {
-        const { query } = req.body;
         if (!query) {
-            return res.status(400).json({ error: "Query is required" });
+            return { error: "Query is required" };
         }
         const collection = client.collections.use('RepoCodeChunk');
 
         const result = await collection.query.nearText(query, {
             limit: 5,
-            returnMetadata: ['distance']
+            returnMetadata: ['distance'],
+            filters: Filters.and(
+                collection.filter.byProperty('userid').equal(email),
+                collection.filter.byProperty('repourl').equal(repo_url)
+            )
         })
 
         const prompt = buildAugmentedPrompt(query, result);
@@ -20,24 +24,27 @@ export async function generation(req, res) {
 
         const ai = new GoogleGenAI({ apiKey: YOUR_API_KEY });
 
+        console.log(prompt);
+
         const llmResponse = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
         });
 
         const finalAnswer = llmResponse.text;
+        console.log(finalAnswer);
 
-        return res.status(200).json({
+        return {
             success: true,
             answer: finalAnswer,
             model: "gemini-2.5-flash"
-        });
-    } catch (error) {
+        };
+    } catch (err) {
         console.error("Falied to generate...", err);
-        res.status(500).json({
+        return {
             error: "Failed to generate...",
             details: process.env.NODE_ENV === "development" ? err.message : undefined
-        });
+        };
     }
 }
 

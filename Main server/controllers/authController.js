@@ -29,7 +29,7 @@ export async function register(req, res) {
     res.status(201).json({
       message: "User registered successfully",
       user: {
-        id: newUser.id,
+        user_id: newUser.user_id,
         name: newUser.name,
         email: newUser.email,
       },
@@ -65,7 +65,7 @@ export async function login(req, res) {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { user_id: user.user_id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -74,7 +74,7 @@ export async function login(req, res) {
       message: "Login successful",
       token,
       user: {
-        id: user.id,
+        user_id: user.user_id,
         name: user.name,
         email: user.email,
       },
