@@ -1,25 +1,37 @@
 import Prompt from "../models/promptModel.js";
-import Auth from "../models/authModel.js";
+import Chat from "../models/chatModel.js";
+//import Auth from "../models/authModel.js";
 import { generation } from "../util/ragOutput.js";
 
 export async function savePrompt(req, res) {
   try {
-    const { email, prompt, repo_url } = req.body;
+    const { chat_id, prompt, repo_id } = req.body;
 
-    if (!email || !prompt) {
+    if (!chat_id || !prompt) {
       return res.status(400).json({ error: "Email and prompt are required" });
     }
 
-    // Find user by email
-    const user = await Auth.findOne({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    if(chat_id===-1){
+      const newChat = await Chat.create({
+        repo_id
+      });
+      
+      if(!newChat){
+        return res.status(500).json({ error: "Unable to create new chat" });
+      }
+
+      chat_id = newChat.chat_id;
     }
+
+    // Find user by email
+    // const user = await Auth.findOne({ where: { email } });
+    // if (!user) {
+    //   return res.status(404).json({ error: "User not found" });
+    // }
 
     // Save prompt
     const newPrompt = await Prompt.create({
-      user_id: user.id,
-      repo_url: repo_url,
+      chat_id,
       prompt,
     });
 
@@ -29,7 +41,7 @@ export async function savePrompt(req, res) {
       return res.status(500).json({ error: answer.error });
     }
 
-    await Prompt.update({ response: answer.answer }, { where: { id: newPrompt.id } });
+    await Prompt.update({ response: answer.answer }, { where: { prompt_id: newPrompt.prompt_id } });
 
     res.status(201).json({
       message: "Prompt saved successfully",
@@ -46,12 +58,12 @@ export async function savePrompt(req, res) {
 
 export async function getPrompts(req, res) {
   try {
-    const id = req.params.id;
-    const prompts = await Prompt.findAll({ where: { user_id: id } });
+    const chat_id = req.params.chat_id;
+    const prompts = await Prompt.findAll({ where: { chat_id: chat_id } });
     if(!prompts) {
       return res.status(404).json({ error: "Prompts not found" });
     }
-    console.log(prompts);
+    //console.log(prompts);
     res.status(200).json(prompts);
   } catch (err) {
     console.error("Get prompts error:", err);

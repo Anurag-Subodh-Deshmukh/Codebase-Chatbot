@@ -6,29 +6,20 @@ import { response } from "express";
 const Prompt = sequelize.define(
   "prompt",
   {
-    id: {
+    prompt_id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    user_id: {
+    chat_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "AUTH",
-        key: "id",
+        model: "CHAT",
+        key: "chat_id",
       },
-    },
-    chat_id:{
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    repo_url:{
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    prompt_title: {  
-      type: DataTypes.STRING,
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     prompt: {
       type: DataTypes.TEXT,
@@ -37,14 +28,9 @@ const Prompt = sequelize.define(
     response: {
       type: DataTypes.TEXT,
     },
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
   },
   {
     tableName: "PROMPT",
-    timestamps: false,
   }
 );
 

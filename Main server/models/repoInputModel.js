@@ -5,7 +5,7 @@ import sequelize from "../db/sequelize.js";
 const RepoInput = sequelize.define(
   "repoInput",
   {
-    id: {
+    repo_id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
@@ -15,9 +15,13 @@ const RepoInput = sequelize.define(
       unique: true,
       allowNull: false,
     },
-    repos: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
+    repo_url: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,   
     },
   },
   {

@@ -7,5 +7,5 @@ import { Router } from "express";
 
 const router = Router();
 router.post("/save-repo", authMiddleware, saveRepoInput);
-router.get("/get-repo/:email", authMiddleware, getRepoInput);
+router.get("/get-repo/:repo_id", authMiddleware, getRepoInput);
 export default router;

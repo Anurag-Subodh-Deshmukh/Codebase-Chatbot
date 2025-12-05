@@ -4,6 +4,6 @@ import { Router } from "express";
 
 const router = Router();
 router.post("/save-prompt", authMiddleware, savePrompt);
-router.get("/get-prompts/:id", authMiddleware, getPrompts);
+router.get("/get-prompts/:chat_id", authMiddleware, getPrompts);
 export default router;
 
