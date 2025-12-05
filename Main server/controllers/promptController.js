@@ -1,5 +1,6 @@
 import Prompt from "../models/promptModel.js";
 import Chat from "../models/chatModel.js";
+import RepoInput from "../models/repoInputModel.js";
 //import Auth from "../models/authModel.js";
 import { generation } from "../util/ragOutput.js";
 
@@ -12,7 +13,9 @@ export async function savePrompt(req, res) {
     }
 
     if (chat_id === -1) {
-      const newChat = await Chat.create({ repo_id });
+      const newChat = await Chat.create({
+        repo_id
+      });
 
       if (!newChat) {
         return res.status(500).json({ error: "Unable to create new chat" });
@@ -26,7 +29,9 @@ export async function savePrompt(req, res) {
       prompt,
     });
 
-    const answer = await generation(prompt);
+    const data = await RepoInput.findOne({ where: { repo_id } });
+
+    const answer = await generation(prompt, data.email, data.repo_url);
 
     if (answer.error) {
       return res.status(500).json({ error: answer.error });
@@ -58,7 +63,7 @@ export async function getPrompts(req, res) {
   try {
     const chat_id = req.params.chat_id;
     const prompts = await Prompt.findAll({ where: { chat_id: chat_id } });
-    if(!prompts) {
+    if (!prompts) {
       return res.status(404).json({ error: "Prompts not found" });
     }
     //console.log(prompts);
