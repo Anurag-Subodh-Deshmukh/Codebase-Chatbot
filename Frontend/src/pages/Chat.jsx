@@ -103,7 +103,7 @@ export default function Chat() {
           setActiveChatId(currentChatId);
           await loadMessages();
         }
-      }, 500);
+      }, 500000);
     } catch (error) {
       console.error('Failed to send message:', error);
       setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
