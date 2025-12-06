@@ -23,7 +23,7 @@ export default function Register() {
       const loginResult = await login(email, password);
       setLoading(false);
       if (loginResult.success) {
-        navigate('/dashboard');
+        navigate('/repos');
       } else {
         setError('Registration successful, but login failed. Please try logging in.');
       }

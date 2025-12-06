@@ -64,3 +64,46 @@ export async function getRepoInput(req, res) {
     });
   }
 }
+
+export async function getAllReposByEmail(req, res) {
+  try {
+    const email = req.params.email;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const repos = await RepoInput.findAll({ where: { email } });
+    res.status(200).json(repos);
+  } catch (err) {
+    console.error("Get all repos error:", err);
+    res.status(500).json({ 
+      error: "Failed to get repos",
+      details: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
+  }
+}
+
+export async function deleteRepo(req, res) {
+  try {
+    const repo_id = req.params.repo_id;
+
+    if (!repo_id) {
+      return res.status(400).json({ error: "Repo id is required" });
+    }
+
+    const deleted = await RepoInput.destroy({ where: { repo_id } });
+    
+    if (!deleted) {
+      return res.status(404).json({ error: "Repository not found" });
+    }
+
+    res.status(200).json({ message: "Repository deleted successfully" });
+  } catch (err) {
+    console.error("Delete repo error:", err);
+    res.status(500).json({ 
+      error: "Failed to delete repository",
+      details: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
+  }
+}

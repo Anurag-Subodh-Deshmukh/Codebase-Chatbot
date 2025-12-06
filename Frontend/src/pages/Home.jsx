@@ -37,10 +37,10 @@ export default function Home() {
 
           {isAuthenticated && (
             <Link
-              to="/dashboard"
+              to="/repos"
               className="inline-block px-8 py-3 bg-white text-black font-medium rounded-xl transition-all hover:bg-zinc-200"
             >
-              Go to Dashboard
+              Go to Repositories
             </Link>
           )}
         </div>
