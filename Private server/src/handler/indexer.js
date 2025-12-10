@@ -7,22 +7,66 @@ import os from "os";
 import { glob } from "glob";
 import client from '../config/vectordb.config.js';
 
+
+const BATCH_SIZE = 50;
 const EXTENSION_MAP = {
-    ".js": "js",
-    ".jsx": "js",
-    ".ts": "js",
-    ".tsx": "js",
-    ".py": "python",
-    ".java": "java",
-    ".go": "go",
     ".cpp": "cpp",
+
+    ".go": "go",
+
+    ".java": "java",
+
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+
+    ".js": "js",
+
+    ".ts": "ts",
+
     ".php": "php",
+
+    ".proto": "proto",
+
+    ".py": "python",
+
+    ".rst": "rst",
+
+    ".rb": "ruby",
+
+    ".rs": "rust",
+
+    ".scala": "scala",
+
+    ".swift": "swift",
+
+    ".md": "markdown",
+
+    ".tex": "latex",
+
+    ".html": "html",
+    ".htm": "html",
+
+    ".sol": "sol",
+
+    ".cs": "csharp",
+
+    ".cob": "cobol",
+    ".cbl": "cobol",
+
+    ".c": "c",
+    ".h": "c",
+
+    ".lua": "lua",
+
+    ".pl": "perl",
+    ".pm": "perl",
+
+    ".hs": "haskell"
 };
+
 
 export const indexProcessor = async (job) => {
     const { repo_url, email } = job.data;
-    console.log("Hi");
-    //console.log(job.data)
 
     const prefix = path.join(os.tmpdir(), 'repo-clone-');
     const localPath = fs.mkdtempSync(prefix);
@@ -30,12 +74,20 @@ export const indexProcessor = async (job) => {
 
         execSync(`git clone --depth 1 ${repo_url} .`, { cwd: localPath, stdio: 'ignore' });
 
-        const files = await glob("**/*", {
+        const allowedExtensions = Object.keys(EXTENSION_MAP);
+        const patterns = allowedExtensions.map(ext => `**/*${ext}`);
+
+        const files = await glob(patterns, {
             cwd: localPath,
             nodir: true,
             absolute: true,
             ignore: [
-                "**/node_modules/**", "**/.git/**", "**/*.md", "**/*.json", "**/*.lock"
+                "**/node_modules/**",
+                "**/.git/**",
+                "**/dist/**",
+                "**/build/**",
+                "**/venv/**",
+                "**/__pycache__/**"
             ]
         });
 
@@ -51,11 +103,11 @@ export const indexProcessor = async (job) => {
 
             if (language) {
                 splitter = RecursiveCharacterTextSplitter.fromLanguage(language, {
-                    chunkSize: 800, chunkOverlap: 100,
+                    chunkSize: 1000, chunkOverlap: 200,
                 });
             } else {
                 splitter = new RecursiveCharacterTextSplitter({
-                    chunkSize: 1000, chunkOverlap: 100,
+                    chunkSize: 1000, chunkOverlap: 200,
                 });
             }
 
@@ -72,8 +124,7 @@ export const indexProcessor = async (job) => {
         }
 
         console.log(allChunks);
-        const myCollection = client.collections.use('RepoCodeChunk')
-
+        const myCollection = client.collections.use('RepoCodeChunk');
         let dataObjects = new Array();
 
         for (let srcObject of allChunks) {
@@ -84,8 +135,13 @@ export const indexProcessor = async (job) => {
             });
         }
 
-        const response = await myCollection.data.insertMany(dataObjects);
-        console.log(response);
+        const totalObjects = dataObjects.length;
+
+        for (let i = 0; i < totalObjects; i += BATCH_SIZE) {
+            const batch = dataObjects.slice(i, i + BATCH_SIZE);
+            await myCollection.data.insertMany(batch);
+        }
+
     } catch (error) {
         console.error("Error processing repo:", error);
         throw error;
