@@ -4,7 +4,6 @@ export function buildAugmentedPrompt(userQuery, result) {
 User Question:
 ${userQuery}
 
-No relevant code was found in the repository.
 Answer the question with best general knowledge.
 `;
   }
@@ -29,8 +28,6 @@ ${content}
   });
 
   const finalPrompt = `
-You are an expert software engineer and code assistant.
-
 User question:
 ${userQuery}
 
@@ -40,7 +37,8 @@ ${contextText}
 
 TASK:
 Use ONLY the above code context to answer the user's question.
-Explain the user's question in logical and correct manner and dont give generalized answers use the snippet wherever you can and also mention from where you have taken the code.
+Explain the user's question in logical and correct manner and dont give generalized answers use the snippet wherever you can and also mention from where you have taken the code from the snippet.
+Andd when you will mention the context mention the file name.
 
 Answer in simple, clean language.
 `;
