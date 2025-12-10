@@ -19,7 +19,7 @@ export default function Login() {
     setLoading(false);
 
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/repos');
     } else {
       setError(result.error);
     }

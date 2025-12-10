@@ -6,7 +6,7 @@ import { generation } from "../util/ragOutput.js";
 
 export async function savePrompt(req, res) {
   try {
-    const { chat_id, prompt, repo_id } = req.body;
+    let { chat_id, prompt, repo_id } = req.body;
 
     if (!chat_id || !prompt) {
       return res.status(400).json({ error: "Email and prompt are required" });
@@ -21,16 +21,9 @@ export async function savePrompt(req, res) {
         return res.status(500).json({ error: "Unable to create new chat" });
       }
 
-      chat_id = newChat.chat_id;
+      chat_id = newChat.chat_id; // now allowed
     }
 
-    // Find user by email
-    // const user = await Auth.findOne({ where: { email } });
-    // if (!user) {
-    //   return res.status(404).json({ error: "User not found" });
-    // }
-
-    // Save prompt
     const newPrompt = await Prompt.create({
       chat_id,
       prompt,
@@ -44,17 +37,24 @@ export async function savePrompt(req, res) {
       return res.status(500).json({ error: answer.error });
     }
 
-    await Prompt.update({ response: answer.answer }, { where: { prompt_id: newPrompt.prompt_id } });
+    await Prompt.update(
+      { response: answer.answer },
+      { where: { prompt_id: newPrompt.prompt_id } }
+    );
+
+    const updatedPrompt = await Prompt.findByPk(newPrompt.prompt_id);
 
     res.status(201).json({
       message: "Prompt saved successfully",
-      data: newPrompt,
+      data: updatedPrompt,
+      chat_id: chat_id,
     });
   } catch (err) {
     console.error("Save prompt error:", err);
     res.status(500).json({
       error: "Failed to save prompt",
-      details: process.env.NODE_ENV === "development" ? err.message : undefined
+      details:
+        process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 }

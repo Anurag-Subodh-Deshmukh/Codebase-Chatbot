@@ -17,10 +17,10 @@ export default function Navbar() {
               <>
                 <span className="text-zinc-400">Hello, {user?.name}</span>
                 <Link
-                  to="/dashboard"
+                  to="/repos"
                   className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-lg transition-colors text-sm"
                 >
-                  Dashboard
+                  Repositories
                 </Link>
                 <button
                   onClick={logout}
